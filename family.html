@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Question Display</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #333;
+        }
+
+        .question-container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 3rem 2rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            max-width: 600px;
+            width: 90%;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .question-container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .question-text {
+            font-size: 2.5rem;
+            font-weight: 300;
+            margin-bottom: 2rem;
+            color: #2c3e50;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            opacity: 0;
+            animation: fadeInUp 1s ease forwards;
+        }
+
+        .question-number {
+            font-size: 1rem;
+            color: #7f8c8d;
+            margin-bottom: 1rem;
+            opacity: 0;
+            animation: fadeInUp 1s ease 0.3s forwards;
+        }
+
+        .no-question {
+            font-size: 1.5rem;
+            color: #e74c3c;
+            font-style: italic;
+        }
+
+        .refresh-btn {
+            margin: 1rem 0.5rem;
+            padding: 1rem 2rem;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            animation: fadeInUp 1s ease 0.6s forwards;
+        }
+
+        .next-btn {
+            margin: 1rem 0.5rem;
+            padding: 1rem 2rem;
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            animation: fadeInUp 1s ease 0.7s forwards;
+        }
+
+        .button-container {
+            margin-top: 2rem;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .refresh-btn:hover {
+            background: linear-gradient(45deg, #764ba2, #667eea);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .next-btn:hover {
+            background: linear-gradient(45deg, #2ecc71, #27ae60);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .refresh-btn:active, .next-btn:active {
+            transform: translateY(0);
+        }
+
+        .disabled {
+            background: linear-gradient(45deg, #95a5a6, #7f8c8d) !important;
+            cursor: not-allowed !important;
+            opacity: 0.6 !important;
+        }
+
+        .disabled:hover {
+            transform: none !important;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2) !important;
+        }
+
+        .session-info {
+            margin-top: 2rem;
+            padding: 1rem;
+            background: rgba(52, 152, 219, 0.1);
+            border-radius: 10px;
+            font-size: 0.9rem;
+            color: #34495e;
+            opacity: 0;
+            animation: fadeInUp 1s ease 0.9s forwards;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @media (max-width: 768px) {
+            .question-text {
+                font-size: 2rem;
+            }
+            
+            .question-container {
+                padding: 2rem 1.5rem;
+                margin: 1rem;
+            }
+
+            .button-container {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .refresh-btn, .next-btn {
+                margin: 0.5rem 0;
+                width: 80%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="question-container">
+        <div class="question-number" id="questionNumber"></div>
+        <div class="question-text" id="questionText"></div>
+        <div class="button-container">
+            <button class="next-btn" id="nextBtn" onclick="moveToNextQuestion()">
+                Next Question →
+            </button>
+            <button class="refresh-btn" id="refreshBtn" onclick="clearSessionAndRefresh()">
+                🔄 Clear Session
+            </button>
+        </div>
+        <div class="session-info" id="sessionInfo"></div>
+    </div>
+
+    <script>
+        // List of questions
+        const questions2 = [
+            "Given the choice of anyone in the world, whom would you want as a dinner guest?",
+            "Would you like to be famous? In what way?",
+            "Before making a telephone call, do you ever rehearse what you are going to say? Why?",
+            "What would constitute a 'perfect' day for you?",
+            "When did you last sing to yourself? To someone else?",
+            "If you were able to live to the age of 90 and retain either the mind or body of a 30-year-old for the last 60 years of your life, which would you want?",
+            "Do you have a secret hunch about how you will die?",
+            "Name three things you and your partner appear to have in common.",
+            "For what in your life do you feel most grateful?",
+            "If you could change anything about the way you were raised, what would it be?",
+            "Take four minutes and tell your partner your life story in as much detail as possible.",
+            "If you could wake up tomorrow having gained any one quality or ability, what would it be?",
+            "If a crystal ball could tell you the truth about yourself, your life, the future, or anything else, what would you want to know?",
+            "Is there something that you've dreamed of doing for a long time? Why haven't you done it?",
+            "What is the greatest accomplishment of your life?",
+            "What do you value most in a friendship?",
+            "What is your most treasured memory?",
+            "What is your most terrible memory?",
+            "If you knew that in one year you would die suddenly, would you change anything about the way you are now living? Why?",
+            "What does friendship mean to you?",
+            "What roles do love and affection play in your life?",
+            "Alternate sharing something you consider a positive characteristic of your partner. Share a total of five items.",
+            "How close and warm is your family? Do you feel your childhood was happier than most other people's?",
+            "How do you feel about your relationship with your mother?",
+            "Make three true 'we' statements each. For instance, 'We are both in this room feeling...'",
+            "Complete this sentence: 'I wish I had someone with whom I could share...'",
+            "If you were going to become a close friend with your partner, please share what would be important for them to know.",
+            "Tell your partner what you like about them; be very honest this time, saying things that you might not say to someone you've just met.",
+            "Share an embarrassing moment in your life.",
+            "When did you last cry in front of another person? By yourself?",
+            "Tell your partner something that you like about them already.",
+            "What, if anything, is too serious to be joked about?",
+            "If you were to die this evening with no opportunity to communicate with anyone, what would you most regret not having told someone? Why haven't you told them yet?",
+            "Your house, containing everything you own, catches fire. After saving your loved ones and pets, you have time to safely make a final dash to save any one item. What would it be? Why?",
+            "Of all the people in your family, whose death would you find most disturbing? Why?",
+            "Share a personal problem and ask your partner's advice on how they might handle it. Then, ask your partner to reflect on how you seem to be feeling about the problem you have chosen."
+        ];
+
+        const questions = [
+            "What would constitute a 'perfect' day for you?",
+            "If you could be any food on the table right now, which one would you be and why?",
+            "If you had a time machine for one day, what would you do with it?",
+            "If you could have any superpower, what would it be?",
+            "What's the funniest joke you've ever heard?",
+            "If you could live anywhere in the world, where would you live?",
+            "What would you rather be known for: being funny or being honest?",
+            "If you could have one wish, what would it be?",
+            "What's the best movie you've ever seen? Why?",
+            "If you were a flavor of ice cream, what would you be?",
+            "What is your most treasured memory?",
+            "What are you most proud of?",
+            "What is something you have to do every day, but don't like doing?",
+            "What are your goals for this year?",
+            "What is one of your best qualities?",
+            "What is one thing you've learned from a mistake?",
+            "What is your biggest fear?",
+            "What do you value most in a friendship?",
+            "If you could change anything about how you were raised, what would it be?",
+            "What are you most grateful for?",
+            "If you could have dinner with anyone in the world, who would it be?",
+            "If you could fix one problem in the world, what would it be?",
+            "What would you do if you knew your best friend or sibling was stealing?",
+            "If you could only eat three foods for the rest of your life, what would they be?",
+            "What is something you have dreamed of doing for a long time?",
+            "If you could learn any musical instrument, which would you learn and why?",
+            "What is a skill you wish you had?",
+            "What would you do if you had to change your name?",
+            "If you could be invisible for a day, where would you go and what would you do?",
+            "If you could only have one holiday, would you pick Christmas or your birthday?"
+        ];
+
+        // Session storage key
+        const SHOWN_QUESTIONS_KEY = 'shownQuestions';
+        const CURRENT_QUESTION_KEY = 'currentQuestion';
+
+        // Function to get shown questions from session storage
+        function getShownQuestions() {
+            const shown = sessionStorage.getItem(SHOWN_QUESTIONS_KEY);
+            return shown ? JSON.parse(shown) : [];
+        }
+
+        // Function to save shown questions to session storage
+        function saveShownQuestions(shownQuestions) {
+            sessionStorage.setItem(SHOWN_QUESTIONS_KEY, JSON.stringify(shownQuestions));
+        }
+
+        // Function to get current question from session storage
+        function getCurrentQuestion() {
+            return sessionStorage.getItem(CURRENT_QUESTION_KEY);
+        }
+
+        // Function to save current question to session storage
+        function saveCurrentQuestion(question) {
+            sessionStorage.setItem(CURRENT_QUESTION_KEY, question);
+        }
+
+        // Function to get available questions (not yet shown)
+        function getAvailableQuestions() {
+            const shownQuestions = getShownQuestions();
+            return questions.filter((question, index) => !shownQuestions.includes(index));
+        }
+
+        // Function to display a random question
+        function displayRandomQuestion() {
+            const questionTextElement = document.getElementById('questionText');
+            const questionNumberElement = document.getElementById('questionNumber');
+            const sessionInfoElement = document.getElementById('sessionInfo');
+            const nextBtn = document.getElementById('nextBtn');
+
+            // Check if we already have a question for this session
+            const currentQuestion = getCurrentQuestion();
+            if (currentQuestion) {
+                questionTextElement.textContent = currentQuestion;
+                questionTextElement.className = 'question-text pulse';
+                
+                const shownQuestions = getShownQuestions();
+                questionNumberElement.textContent = `Question ${shownQuestions.length} of ${questions.length}`;
+                sessionInfoElement.innerHTML = `
+                    <strong>Session Status:</strong><br>
+                    Questions shown: ${shownQuestions.length} of ${questions.length}<br>
+                    Remaining questions: ${questions.length - shownQuestions.length}
+                `;
+                updateButtonStates();
+                return;
+            }
+
+            const availableQuestions = getAvailableQuestions();
+
+            if (availableQuestions.length === 0) {
+                questionTextElement.textContent = "All questions have been shown in this session!";
+                questionTextElement.className = 'question-text no-question';
+                questionNumberElement.textContent = "Session Complete";
+                sessionInfoElement.innerHTML = `
+                    <strong>Session Status:</strong><br>
+                    All ${questions.length} questions have been displayed.<br>
+                    Use "Clear Session" to start over with new questions.
+                `;
+                updateButtonStates();
+                return;
+            }
+
+            // Select a random question from available questions
+            const randomIndex = Math.floor(Math.random() * availableQuestions.length);
+            const selectedQuestion = availableQuestions[randomIndex];
+            
+            // Find the original index of the selected question
+            const originalIndex = questions.indexOf(selectedQuestion);
+
+            // Update shown questions
+            const shownQuestions = getShownQuestions();
+            shownQuestions.push(originalIndex);
+            saveShownQuestions(shownQuestions);
+            saveCurrentQuestion(selectedQuestion);
+
+            // Display the question
+            questionTextElement.textContent = selectedQuestion;
+            questionTextElement.className = 'question-text';
+            questionNumberElement.textContent = `Question ${shownQuestions.length} of ${questions.length}`;
+            
+            sessionInfoElement.innerHTML = `
+                <strong>Session Status:</strong><br>
+                Questions shown: ${shownQuestions.length} of ${questions.length}<br>
+                Remaining questions: ${questions.length - shownQuestions.length}
+            `;
+
+            updateButtonStates();
+        }
+
+        // Function to update button states based on available questions
+        function updateButtonStates() {
+            const nextBtn = document.getElementById('nextBtn');
+            const availableQuestions = getAvailableQuestions();
+
+            if (availableQuestions.length === 0) {
+                nextBtn.classList.add('disabled');
+                nextBtn.textContent = 'No More Questions';
+                nextBtn.onclick = null;
+            } else {
+                nextBtn.classList.remove('disabled');
+                nextBtn.textContent = 'Next Question →';
+                nextBtn.onclick = moveToNextQuestion;
+            }
+        }
+
+        // Function to move to next question
+        function moveToNextQuestion() {
+            const availableQuestions = getAvailableQuestions();
+            
+            if (availableQuestions.length === 0) {
+                return; // No more questions available
+            }
+
+            // Clear current question from session storage to allow new one
+            sessionStorage.removeItem(CURRENT_QUESTION_KEY);
+            
+            // Add visual feedback
+            const nextBtn = document.getElementById('nextBtn');
+            const originalText = nextBtn.textContent;
+            nextBtn.textContent = 'Loading...';
+            nextBtn.style.background = 'linear-gradient(45deg, #f39c12, #e67e22)';
+            
+            setTimeout(() => {
+                nextBtn.style.background = 'linear-gradient(45deg, #27ae60, #2ecc71)';
+                displayRandomQuestion();
+            }, 500);
+        }
+
+        // Function to clear session and refresh
+        function clearSessionAndRefresh() {
+            sessionStorage.removeItem(SHOWN_QUESTIONS_KEY);
+            sessionStorage.removeItem(CURRENT_QUESTION_KEY);
+            
+            // Add a visual feedback
+            const refreshBtn = document.getElementById('refreshBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            
+            refreshBtn.style.background = 'linear-gradient(45deg, #e74c3c, #c0392b)';
+            refreshBtn.textContent = '✓ Session Cleared!';
+            
+            setTimeout(() => {
+                refreshBtn.style.background = 'linear-gradient(45deg, #667eea, #764ba2)';
+                refreshBtn.textContent = '🔄 Clear Session';
+                displayRandomQuestion();
+            }, 1000);
+        }
+
+        // Function to initialize the page
+        function initializePage() {
+            displayRandomQuestion();
+            
+            // Add some interactive effects
+            const container = document.querySelector('.question-container');
+            container.addEventListener('mouseenter', () => {
+                container.style.background = 'rgba(255, 255, 255, 1)';
+            });
+            
+            container.addEventListener('mouseleave', () => {
+                container.style.background = 'rgba(255, 255, 255, 0.95)';
+            });
+        }
+
+        // Initialize when the page loads
+        document.addEventListener('DOMContentLoaded', initializePage);
+
+        // Optional: Add keyboard shortcuts
+        document.addEventListener('keydown', (event) => {
+            if (event.target.matches('input, textarea')) return;
+            
+            switch(event.code) {
+                case 'Space':
+                case 'ArrowRight':
+                case 'Enter':
+                    event.preventDefault();
+                    moveToNextQuestion();
+                    break;
+                case 'KeyR':
+                case 'Escape':
+                    event.preventDefault();
+                    clearSessionAndRefresh();
+                    break;
+            }
+        });
+    </script>
+</body>
+</html>
