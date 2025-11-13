@@ -100,6 +100,57 @@
             flex-wrap: wrap;
         }
 
+        .category-container {
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .category-btn {
+            padding: 0.8rem 1.5rem;
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            animation: fadeInUp 1s ease 0.4s forwards;
+        }
+
+        .category-btn.romantic {
+            background: linear-gradient(45deg, #e91e63, #ad1457);
+        }
+
+        .category-btn.family {
+            background: linear-gradient(45deg, #ff9800, #f57c00);
+        }
+
+        .category-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .category-btn.active {
+            background: linear-gradient(45deg, #2ecc71, #27ae60);
+            box-shadow: 0 6px 20px rgba(46, 204, 113, 0.4);
+        }
+
+        .category-btn.active:hover {
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+        }
+
+        .current-category {
+            font-size: 0.9rem;
+            color: #7f8c8d;
+            margin-bottom: 1rem;
+            font-style: italic;
+        }
+
         .refresh-btn:hover {
             background: linear-gradient(45deg, #764ba2, #667eea);
             transform: translateY(-2px);
@@ -180,7 +231,13 @@
                 align-items: center;
             }
 
-            .refresh-btn, .next-btn {
+            .category-container {
+                flex-direction: column;
+                align-items: center;
+                gap: 0.5rem;
+            }
+
+            .refresh-btn, .next-btn, .category-btn {
                 margin: 0.5rem 0;
                 width: 80%;
             }
@@ -189,10 +246,19 @@
 </head>
 <body>
     <div class="question-container">
+        <div class="category-container">
+            <button class="category-btn romantic" id="romanticBtn" onclick="selectCategory('romantic')">
+                💕 Romantic
+            </button>
+            <button class="category-btn family" id="familyBtn" onclick="selectCategory('family')">
+                👨‍👩‍👧‍👦 Friend/Family
+            </button>
+        </div>
+        <div class="current-category" id="currentCategory">Select a category to begin</div>
         <div class="question-number" id="questionNumber"></div>
-        <div class="question-text" id="questionText"></div>
+        <div class="question-text" id="questionText">Choose a category above to see questions</div>
         <div class="button-container">
-            <button class="next-btn" id="nextBtn" onclick="moveToNextQuestion()">
+            <button class="next-btn disabled" id="nextBtn" onclick="moveToNextQuestion()">
                 Next Question →
             </button>
             <button class="refresh-btn" id="refreshBtn" onclick="clearSessionAndRefresh()">
@@ -203,82 +269,139 @@
     </div>
 
     <script>
-        // List of questions
-        const questions2 = [
-            "Given the choice of anyone in the world, whom would you want as a dinner guest?",
-            "Would you like to be famous? In what way?",
-            "Before making a telephone call, do you ever rehearse what you are going to say? Why?",
-            "What would constitute a 'perfect' day for you?",
-            "When did you last sing to yourself? To someone else?",
-            "If you were able to live to the age of 90 and retain either the mind or body of a 30-year-old for the last 60 years of your life, which would you want?",
-            "Do you have a secret hunch about how you will die?",
-            "Name three things you and your partner appear to have in common.",
-            "For what in your life do you feel most grateful?",
-            "If you could change anything about the way you were raised, what would it be?",
-            "Take four minutes and tell your partner your life story in as much detail as possible.",
-            "If you could wake up tomorrow having gained any one quality or ability, what would it be?",
-            "If a crystal ball could tell you the truth about yourself, your life, the future, or anything else, what would you want to know?",
-            "Is there something that you've dreamed of doing for a long time? Why haven't you done it?",
-            "What is the greatest accomplishment of your life?",
-            "What do you value most in a friendship?",
-            "What is your most treasured memory?",
-            "What is your most terrible memory?",
-            "If you knew that in one year you would die suddenly, would you change anything about the way you are now living? Why?",
-            "What does friendship mean to you?",
-            "What roles do love and affection play in your life?",
-            "Alternate sharing something you consider a positive characteristic of your partner. Share a total of five items.",
-            "How close and warm is your family? Do you feel your childhood was happier than most other people's?",
-            "How do you feel about your relationship with your mother?",
-            "Make three true 'we' statements each. For instance, 'We are both in this room feeling...'",
-            "Complete this sentence: 'I wish I had someone with whom I could share...'",
-            "If you were going to become a close friend with your partner, please share what would be important for them to know.",
-            "Tell your partner what you like about them; be very honest this time, saying things that you might not say to someone you've just met.",
-            "Share an embarrassing moment in your life.",
-            "When did you last cry in front of another person? By yourself?",
-            "Tell your partner something that you like about them already.",
-            "What, if anything, is too serious to be joked about?",
-            "If you were to die this evening with no opportunity to communicate with anyone, what would you most regret not having told someone? Why haven't you told them yet?",
-            "Your house, containing everything you own, catches fire. After saving your loved ones and pets, you have time to safely make a final dash to save any one item. What would it be? Why?",
-            "Of all the people in your family, whose death would you find most disturbing? Why?",
-            "Share a personal problem and ask your partner's advice on how they might handle it. Then, ask your partner to reflect on how you seem to be feeling about the problem you have chosen."
-        ];
+        // Question categories
+        const questionCategories = {
+            romantic: [
+                "Given the choice of anyone in the world, whom would you want as a dinner guest?",
+                "Would you like to be famous? In what way?",
+                "Before making a telephone call, do you ever rehearse what you are going to say? Why?",
+                "What would constitute a 'perfect' day for you?",
+                "When did you last sing to yourself? To someone else?",
+                "If you were able to live to the age of 90 and retain either the mind or body of a 30-year-old for the last 60 years of your life, which would you want?",
+                "Do you have a secret hunch about how you will die?",
+                "Name three things you and your partner appear to have in common.",
+                "For what in your life do you feel most grateful?",
+                "If you could change anything about the way you were raised, what would it be?",
+                "Take four minutes and tell your partner your life story in as much detail as possible.",
+                "If you could wake up tomorrow having gained any one quality or ability, what would it be?",
+                "If a crystal ball could tell you the truth about yourself, your life, the future, or anything else, what would you want to know?",
+                "Is there something that you've dreamed of doing for a long time? Why haven't you done it?",
+                "What is the greatest accomplishment of your life?",
+                "What do you value most in a friendship?",
+                "What is your most treasured memory?",
+                "What is your most terrible memory?",
+                "If you knew that in one year you would die suddenly, would you change anything about the way you are now living? Why?",
+                "What does friendship mean to you?",
+                "What roles do love and affection play in your life?",
+                "Alternate sharing something you consider a positive characteristic of your partner. Share a total of five items.",
+                "How close and warm is your family? Do you feel your childhood was happier than most other people's?",
+                "How do you feel about your relationship with your mother?",
+                "Make three true 'we' statements each. For instance, 'We are both in this room feeling...'",
+                "Complete this sentence: 'I wish I had someone with whom I could share...'",
+                "If you were going to become a close friend with your partner, please share what would be important for them to know.",
+                "Tell your partner what you like about them; be very honest this time, saying things that you might not say to someone you've just met.",
+                "Share an embarrassing moment in your life.",
+                "When did you last cry in front of another person? By yourself?",
+                "Tell your partner something that you like about them already.",
+                "What, if anything, is too serious to be joked about?",
+                "If you were to die this evening with no opportunity to communicate with anyone, what would you most regret not having told someone? Why haven't you told them yet?",
+                "Your house, containing everything you own, catches fire. After saving your loved ones and pets, you have time to safely make a final dash to save any one item. What would it be? Why?",
+                "Of all the people in your family, whose death would you find most disturbing? Why?",
+                "Share a personal problem and ask your partner's advice on how they might handle it. Then, ask your partner to reflect on how you seem to be feeling about the problem you have chosen."
+            ],
+            family: [
+                "What would constitute a 'perfect' day for you?",
+                "If you could be any food on the table right now, which one would you be and why?",
+                "If you had a time machine for one day, what would you do with it?",
+                "If you could have any superpower, what would it be?",
+                "What's the funniest joke you've ever heard?",
+                "If you could live anywhere in the world, where would you live?",
+                "What would you rather be known for: being funny or being honest?",
+                "If you could have one wish, what would it be?",
+                "What's the best movie you've ever seen? Why?",
+                "If you were a flavor of ice cream, what would you be?",
+                "What is your most treasured memory?",
+                "What are you most proud of?",
+                "What is something you have to do every day, but don't like doing?",
+                "What are your goals for this year?",
+                "What is one of your best qualities?",
+                "What is one thing you've learned from a mistake?",
+                "What is your biggest fear?",
+                "What do you value most in a friendship?",
+                "If you could change anything about how you were raised, what would it be?",
+                "What are you most grateful for?",
+                "If you could have dinner with anyone in the world, who would it be?",
+                "If you could fix one problem in the world, what would it be?",
+                "What would you do if you knew your best friend or sibling was stealing?",
+                "If you could only eat three foods for the rest of your life, what would they be?",
+                "What is something you have dreamed of doing for a long time?",
+                "If you could learn any musical instrument, which would you learn and why?",
+                "What is a skill you wish you had?",
+                "What would you do if you had to change your name?",
+                "If you could be invisible for a day, where would you go and what would you do?",
+                "If you could only have one holiday, would you pick Christmas or your birthday?"
+            ]
+        };
 
-        const questions = [
-            "What would constitute a 'perfect' day for you?",
-            "If you could be any food on the table right now, which one would you be and why?",
-            "If you had a time machine for one day, what would you do with it?",
-            "If you could have any superpower, what would it be?",
-            "What's the funniest joke you've ever heard?",
-            "If you could live anywhere in the world, where would you live?",
-            "What would you rather be known for: being funny or being honest?",
-            "If you could have one wish, what would it be?",
-            "What's the best movie you've ever seen? Why?",
-            "If you were a flavor of ice cream, what would you be?",
-            "What is your most treasured memory?",
-            "What are you most proud of?",
-            "What is something you have to do every day, but don't like doing?",
-            "What are your goals for this year?",
-            "What is one of your best qualities?",
-            "What is one thing you've learned from a mistake?",
-            "What is your biggest fear?",
-            "What do you value most in a friendship?",
-            "If you could change anything about how you were raised, what would it be?",
-            "What are you most grateful for?",
-            "If you could have dinner with anyone in the world, who would it be?",
-            "If you could fix one problem in the world, what would it be?",
-            "What would you do if you knew your best friend or sibling was stealing?",
-            "If you could only eat three foods for the rest of your life, what would they be?",
-            "What is something you have dreamed of doing for a long time?",
-            "If you could learn any musical instrument, which would you learn and why?",
-            "What is a skill you wish you had?",
-            "What would you do if you had to change your name?",
-            "If you could be invisible for a day, where would you go and what would you do?",
-            "If you could only have one holiday, would you pick Christmas or your birthday?"
-        ];
+        // Current active category and questions
+        let currentCategory = null;
+        let questions = [];
 
-        // Session storage key
+        // Session storage keys
         const SHOWN_QUESTIONS_KEY = 'shownQuestions';
         const CURRENT_QUESTION_KEY = 'currentQuestion';
+        const CURRENT_CATEGORY_KEY = 'currentCategory';
+        
+        // Function to select category
+        function selectCategory(category) {
+            currentCategory = category;
+            questions = questionCategories[category];
+            sessionStorage.setItem(CURRENT_CATEGORY_KEY, category);
+            
+            // Update UI
+            updateCategoryButtons();
+            updateCategoryDisplay();
+            
+            // Clear session data when switching categories
+            clearSessionData();
+            
+            // Display first question of the category
+            displayRandomQuestion();
+        }
+
+        // Function to update category button states
+        function updateCategoryButtons() {
+            const romanticBtn = document.getElementById('romanticBtn');
+            const familyBtn = document.getElementById('familyBtn');
+            
+            // Remove active class from all buttons
+            romanticBtn.classList.remove('active');
+            familyBtn.classList.remove('active');
+            
+            // Add active class to current category button
+            if (currentCategory === 'romantic') {
+                romanticBtn.classList.add('active');
+            } else if (currentCategory === 'family') {
+                familyBtn.classList.add('active');
+            }
+        }
+
+        // Function to update category display
+        function updateCategoryDisplay() {
+            const currentCategoryElement = document.getElementById('currentCategory');
+            if (currentCategory) {
+                const categoryName = currentCategory.charAt(0).toUpperCase() + currentCategory.slice(1);
+                currentCategoryElement.textContent = `Category: ${categoryName} Questions`;
+            } else {
+                currentCategoryElement.textContent = 'Select a category to begin';
+            }
+        }
+
+        // Function to clear session data
+        function clearSessionData() {
+            sessionStorage.removeItem(SHOWN_QUESTIONS_KEY);
+            sessionStorage.removeItem(CURRENT_QUESTION_KEY);
+        }
 
         // Function to get shown questions from session storage
         function getShownQuestions() {
@@ -313,6 +436,18 @@
             const questionNumberElement = document.getElementById('questionNumber');
             const sessionInfoElement = document.getElementById('sessionInfo');
             const nextBtn = document.getElementById('nextBtn');
+
+            // Check if a category is selected
+            if (!currentCategory || !questions.length) {
+                questionTextElement.textContent = "Choose a category above to see questions";
+                questionNumberElement.textContent = "";
+                sessionInfoElement.innerHTML = "";
+                nextBtn.classList.add('disabled');
+                return;
+            }
+
+            // Enable next button
+            nextBtn.classList.remove('disabled');
 
             // Check if we already have a question for this session
             const currentQuestion = getCurrentQuestion();
@@ -391,6 +526,10 @@
 
         // Function to move to next question
         function moveToNextQuestion() {
+            if (!currentCategory) {
+                return; // No category selected
+            }
+
             const availableQuestions = getAvailableQuestions();
             
             if (availableQuestions.length === 0) {
@@ -433,7 +572,14 @@
 
         // Function to initialize the page
         function initializePage() {
-            displayRandomQuestion();
+            // Check if there's a saved category
+            const savedCategory = sessionStorage.getItem(CURRENT_CATEGORY_KEY);
+            if (savedCategory && questionCategories[savedCategory]) {
+                selectCategory(savedCategory);
+            } else {
+                updateCategoryDisplay();
+                displayRandomQuestion();
+            }
             
             // Add some interactive effects
             const container = document.querySelector('.question-container');
